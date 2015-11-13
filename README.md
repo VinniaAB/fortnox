@@ -1,5 +1,11 @@
 # Fortnox API wrapper in PHP
+## Installation
+```
+composer install
+```
 ## Usage
+Aquire access token & client secret from fortnox. See http://developer.fortnox.se/documentation/general/authentication/
+
 ```php
 $accessToken = 'my-token';
 $clientSecret = 'my-secret';
