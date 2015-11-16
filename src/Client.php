@@ -111,7 +111,7 @@ class Client {
     public function getCustomer($customerNumber) {
         $response = $this->sendRequest('GET', '/customers/' . $customerNumber);
         $parsed = $this->parseJsonResponse($response);
-        return $parsed['Customers'];
+        return $parsed['Customer'];
     }
 
     /**
