@@ -2,7 +2,7 @@
 
 namespace Vinnia\Fortnox;
 
-use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
@@ -37,12 +37,12 @@ class Client {
 
     /**
      * Client constructor.
-     * @param HttpClient $client
+     * @param ClientInterface $client
      * @param string $accessToken
      * @param string $clientSecret
      * @param bool $https
      */
-    function __construct(HttpClient $client, $accessToken, $clientSecret, $https = true) {
+    function __construct(ClientInterface $client, $accessToken, $clientSecret, $https = true) {
         $this->httpClient = $client;
         $this->accessToken = $accessToken;
         $this->clientSecret = $clientSecret;
