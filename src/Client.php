@@ -72,6 +72,48 @@ class Client {
     }
 
     /**
+     * @param string $method
+     * @param string $endpoint
+     * @param string $dataKey json key to move to before returning
+     * @param array $options
+     * @return array
+     */
+    protected function sendParseRequest($method, $endpoint, $dataKey = '', array $options = []) {
+        $res = $this->sendRequest($method, $endpoint, $options);
+        $json = $this->parseJsonResponse($res);
+
+        if ( $dataKey !== '' ) {
+            $json = $json[$dataKey];
+        }
+
+        return $json;
+    }
+
+    /**
+     * @param string $endpoint
+     * @param string $dataKey
+     * @param array $options
+     * @return array
+     */
+    protected function getPaginatedEndpoint($endpoint, $dataKey, array $options = []) {
+        $response = $this->sendRequest('GET', $endpoint);
+        $parsed = $this->parseJsonResponse($response);
+        $items = $parsed[$dataKey];
+        $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
+
+        for ( $i = 2; $i < $totalPages; $i++ ) {
+            $moreItems = $this->sendParseRequest('GET', $endpoint, $dataKey, array_merge($options, [
+                'query' => [
+                    'page' => $i
+                ]
+            ]));
+            $items = array_merge($items, $moreItems);
+        }
+
+        return $items;
+    }
+
+    /**
      * @param ResponseInterface $res
      * @return array
      */
@@ -90,18 +132,7 @@ class Client {
      * @return string[][] array of customers
      */
     public function getCustomers() {
-        $response = $this->sendRequest('GET', '/customers');
-        $parsed = $this->parseJsonResponse($response);
-        $customers = $parsed['Customers'];
-        $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
-
-        for ($i = 2; $i <= $totalPages; $i++) {
-            $response = $this->sendRequest('GET', '/customers', ['query' => ['page' => $i]]);
-            $parsed = $this->parseJsonResponse($response);
-            $customers = array_merge($customers, $parsed['Customers']);
-        }
-
-        return $customers;
+        return $this->getPaginatedEndpoint('/customers', 'Customers');
     }
 
     /**
@@ -109,9 +140,7 @@ class Client {
      * @return string[] customer
      */
     public function getCustomer($customerNumber) {
-        $response = $this->sendRequest('GET', '/customers/' . $customerNumber);
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Customer'];
+        return $this->sendParseRequest('GET', '/customers/' . $customerNumber, 'Customer');
     }
 
     /**
@@ -119,14 +148,11 @@ class Client {
      * @return string[] customer
      */
     public function createCustomer(array $data) {
-        $response = $this->sendRequest('POST', '/customers', [
+        return $this->sendParseRequest('POST', '/customers', 'Customer', [
             'json' => [
                 'Customer' => $data
             ]
         ]);
-
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Customer'];
     }
 
     /**
@@ -135,13 +161,11 @@ class Client {
      * @return string[] customer
      */
     public function updateCustomer($customerNumber, array $data) {
-        $response = $this->sendRequest('PUT', '/customers/' . $customerNumber, [
+        return $this->sendParseRequest('PUT', '/customers/' . $customerNumber, 'Customer', [
             'json' => [
                 'Customer' => $data
             ]
         ]);
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Customer'];
     }
 
     /**
@@ -157,17 +181,7 @@ class Client {
      * @return string[][] array of suppliers
      */
     public function getSuppliers() {
-        $response = $this->sendRequest('GET', '/suppliers');
-        $parsed = $this->parseJsonResponse($response);
-        $suppliers = $parsed['Suppliers'];
-        $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
-        for ($i = 2; $i <= $totalPages; $i++) {
-            $response = $this->sendRequest('GET', '/suppliers', ['query' => ['page' => $i]]);
-            $parsed = $this->parseJsonResponse($response);
-            $suppliers = array_merge($suppliers, $parsed['Suppliers']);
-        }
-
-        return $suppliers;
+        return $this->getPaginatedEndpoint('/suppliers', 'Suppliers');
     }
 
     /**
@@ -175,9 +189,7 @@ class Client {
      * @return string[] supplier
      */
     public function getSupplier($id) {
-        $response = $this->sendRequest('GET', '/suppliers/' . $id);
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Supplier'];
+        return $this->sendParseRequest('GET', '/suppliers/' . $id, 'Supplier');
     }
 
     /**
@@ -203,11 +215,9 @@ class Client {
      * @return string[]
      */
     public function putInboxFile(StreamInterface $data) {
-        $response = $this->sendRequest('POST', '/inbox', [
+        return $this->sendParseRequest('POST', '/inbox', 'File', [
             'body' => $data
         ]);
-
-        return $this->parseJsonResponse($response)['File'];
     }
 
     /**
@@ -216,7 +226,7 @@ class Client {
      * @return string[]
      */
     public function createSupplierInvoiceFileConnection($supplierInvoiceNumber, $fileId) {
-        $r = $this->sendRequest('POST', '/supplierinvoicefileconnections', [
+        return $this->sendParseRequest('POST', '/supplierinvoicefileconnections', 'SupplierInvoiceFileConnection', [
             'json' => [
                 'SupplierInvoiceFileConnection' => [
                     'SupplierInvoiceNumber' => $supplierInvoiceNumber,
@@ -224,15 +234,13 @@ class Client {
                 ]
             ]
         ]);
-        return $this->parseJsonResponse($r)['SupplierInvoiceFileConnection'];
     }
 
     /**
      * @return string[][]
      */
     public function getSupplierInvoiceFileConnections() {
-        $r = $this->sendRequest('GET', '/supplierinvoicefileconnections');
-        return $this->parseJsonResponse($r)['SupplierInvoiceFileConnections'];
+        return $this->sendParseRequest('GET', '/supplierinvoicefileconnections', 'SupplierInvoiceFileConnections');
     }
 
     /**
@@ -240,8 +248,7 @@ class Client {
      * @return string[]
      */
     public function getSupplierInvoice($id) {
-        $r = $this->sendRequest('GET', '/supplierinvoices/' . $id);
-        return $this->parseJsonResponse($r)['SupplierInvoice'];
+        return $this->sendParseRequest('GET', '/supplierinvoices/' . $id, 'SupplierInvoice');
     }
 
     /**
@@ -249,21 +256,18 @@ class Client {
      * @return string[]
      */
     public function createSupplierInvoice(array $data) {
-        $r = $this->sendRequest('POST', '/supplierinvoices', [
+        return $this->sendParseRequest('POST', '/supplierinvoices', 'SupplierInvoice', [
             'json' => [
                 'SupplierInvoice' => $data
             ]
         ]);
-        return $this->parseJsonResponse($r)['SupplierInvoice'];
     }
 
     /**
      * @return string[][] array of projects
      */
     public function getProjects() {
-        $response = $this->sendRequest('GET', '/projects');
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Projects'];
+        return $this->sendParseRequest('GET', '/projects', 'Projects');
     }
 
     /**
@@ -271,9 +275,7 @@ class Client {
      * @return string[] project
      */
     public function getProject($projectNumber) {
-        $response = $this->sendRequest('GET', '/projects/' . $projectNumber);
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Project'];
+        return $this->sendParseRequest('GET', '/projects/' . $projectNumber, 'Project');
     }
 
     /**
@@ -281,27 +283,24 @@ class Client {
      * @return string[] project
      */
     public function createProject(array $data) {
-        $response = $this->sendRequest('POST', '/projects', [
+        return $this->sendParseRequest('POST', '/projects', 'Project', [
             'json' => [
                 'Project' => $data
             ]
         ]);
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Project'];
     }
 
     /**
      * @param int $projectNumber
      * @param string[] $data
+     * @return mixed
      */
     public function updateProject($projectNumber, array $data) {
-        $response = $this->sendRequest('PUT', '/projects/' . $projectNumber, [
+        return $this->sendParseRequest('PUT', '/projects/' . $projectNumber, 'Project', [
             'json' => [
                 'Project' => $data
             ]
         ]);
-        $parsed = $this->parseJsonResponse($response);
-        return $parsed['Project'];
     }
 
     /**
@@ -311,6 +310,13 @@ class Client {
     public function deleteProject($projectNumber) {
         $response = $this->sendRequest('DELETE', '/projects/' . $projectNumber);
         return (string) $response->getBody();
+    }
+
+    /**
+     * @return array
+     */
+    public function getVouchers() {
+        return $this->getPaginatedEndpoint('/vouchers', 'Vouchers');
     }
 
 }
