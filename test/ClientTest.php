@@ -80,4 +80,27 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue(is_array($result));
     }
 
+    public function testGetSingleVoucher() {
+        $result = $this->client->getVoucher('A', 1, 1);
+
+        var_dump($result);
+    }
+
+    public function testCreateVoucher() {
+        $r = $this->client->createVoucher([
+            'TransactionDate' => '2014-06-01',
+            'VoucherSeries' => 'A',
+            'Description' => 'Mat & sånt',
+            'VoucherRows' => [[
+                'Account' => 1930,
+                'Debit' => 1500
+            ], [
+                'Account' => 1910,
+                'Credit' => 1500
+            ]]
+        ]);
+
+        var_dump($r);
+    }
+
 }

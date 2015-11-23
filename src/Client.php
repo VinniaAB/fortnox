@@ -319,4 +319,31 @@ class Client {
         return $this->getPaginatedEndpoint('/vouchers', 'Vouchers');
     }
 
+    /**
+     * @param string $series
+     * @param string $voucherNumber
+     * @param int $financialYear year starting at 1
+     * @return array
+     */
+    public function getVoucher($series, $voucherNumber, $financialYear) {
+        $endpoint = sprintf('/vouchers/%s/%s', $series, $voucherNumber);
+        return $this->sendParseRequest('GET', $endpoint, 'Voucher', [
+            'query' => [
+                'financialyear' => $financialYear
+            ]
+        ]);
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function createVoucher(array $data) {
+        return $this->sendParseRequest('POST', '/vouchers', 'Voucher', [
+            'json' => [
+                'Voucher' => $data
+            ]
+        ]);
+    }
+
 }
