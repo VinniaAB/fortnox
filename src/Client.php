@@ -96,7 +96,7 @@ class Client {
      * @return array
      */
     protected function getPaginatedEndpoint($endpoint, $dataKey, array $options = []) {
-        $response = $this->sendRequest('GET', $endpoint);
+        $response = $this->sendRequest('GET', $endpoint, $options);
         $parsed = $this->parseJsonResponse($response);
         $items = $parsed[$dataKey];
         $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
@@ -313,23 +313,28 @@ class Client {
     }
 
     /**
+     * @param string $financialYearDate date of the financial year to use (Y-m-d)
      * @return array
      */
-    public function getVouchers() {
-        return $this->getPaginatedEndpoint('/vouchers', 'Vouchers');
+    public function getVouchers($financialYearDate) {
+        return $this->getPaginatedEndpoint('/vouchers', 'Vouchers', [
+            'query' => [
+                'financialyeardate' => $financialYearDate
+            ]
+        ]);
     }
 
     /**
      * @param string $series
      * @param string $voucherNumber
-     * @param int $financialYear year starting at 1
+     * @param string $financialYearDate date of the financial year to use (Y-m-d)
      * @return array
      */
-    public function getVoucher($series, $voucherNumber, $financialYear) {
+    public function getVoucher($series, $voucherNumber, $financialYearDate) {
         $endpoint = sprintf('/vouchers/%s/%s', $series, $voucherNumber);
         return $this->sendParseRequest('GET', $endpoint, 'Voucher', [
             'query' => [
-                'financialyear' => $financialYear
+                'financialyear' => $financialYearDate
             ]
         ]);
     }

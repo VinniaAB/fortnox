@@ -75,13 +75,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testGetVouchers() {
-        $result = $this->client->getVouchers();
+        $result = $this->client->getVouchers('2015-01-01');
         var_dump($result);
         $this->assertTrue(is_array($result));
     }
 
     public function testGetSingleVoucher() {
-        $result = $this->client->getVoucher('A', 1, 1);
+        $result = $this->client->getVoucher('A', 1, '2014-01-01');
 
         var_dump($result);
     }
