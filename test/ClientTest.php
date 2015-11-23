@@ -68,4 +68,16 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->client->deleteCustomer($result['CustomerNumber']);
     }
 
+    public function testGetProjects() {
+        $result = $this->client->getProjects();
+
+        $this->assertTrue(is_array($result));
+    }
+
+    public function testGetVouchers() {
+        $result = $this->client->getVouchers();
+        var_dump($result);
+        $this->assertTrue(is_array($result));
+    }
+
 }
