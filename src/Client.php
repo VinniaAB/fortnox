@@ -57,7 +57,7 @@ class Client {
      * @return ResponseInterface
      */
     protected function sendRequest($method, $endpoint, array $options = []) {
-        $res = $this->httpClient->request($method, self::API_URL . $endpoint, array_merge_recursive([
+        $res = $this->httpClient->request($method, self::API_URL . $endpoint, array_merge([
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',

@@ -104,11 +104,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function testGetSupplierInvoices() {
-        $r = $this->client->getSupplierInvoices([
-            'query' => [
-                'filter' => 'fullypaid',
-            ],
-        ]);
+        $r = $this->client->getSupplierInvoices();
 
         var_dump($r);
     }
