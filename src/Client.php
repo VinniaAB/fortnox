@@ -355,7 +355,7 @@ class Client {
         $endpoint = sprintf('/vouchers/%s/%s', $series, $voucherNumber);
         return $this->sendParseRequest('GET', $endpoint, 'Voucher', [
             'query' => [
-                'financialyear' => $financialYearDate
+                'financialyeardate' => $financialYearDate
             ]
         ]);
     }
