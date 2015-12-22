@@ -103,4 +103,14 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         var_dump($r);
     }
 
+    public function testGetSupplierInvoices() {
+        $r = $this->client->getSupplierInvoices([
+            'query' => [
+                'filter' => 'fullypaid',
+            ],
+        ]);
+
+        var_dump($r);
+    }
+
 }

@@ -244,6 +244,14 @@ class Client {
     }
 
     /**
+     * @param array $options guzzle request options
+     * @return string[][]
+     */
+    public function getSupplierInvoices(array $options = []) {
+        return $this->getPaginatedEndpoint('/supplierinvoices', 'SupplierInvoices', $options);
+    }
+
+    /**
      * @param int $id
      * @return string[]
      */
@@ -260,6 +268,19 @@ class Client {
             'json' => [
                 'SupplierInvoice' => $data
             ]
+        ]);
+    }
+
+    /**
+     * @param int $id
+     * @param array $data the supplier invoice data
+     * @return array
+     */
+    public function updateSupplierInvoice($id, array $data) {
+        return $this->sendParseRequest('PUT', '/supplierinvoices/' . $id, 'SupplierInvoice', [
+            'json' => [
+                'SupplierInvoice' => $data,
+            ],
         ]);
     }
 
