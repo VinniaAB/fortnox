@@ -96,17 +96,18 @@ class Client {
      * @return array
      */
     protected function getPaginatedEndpoint($endpoint, $dataKey, array $options = []) {
-        $response = $this->sendRequest('GET', $endpoint, $options);
-        $parsed = $this->parseJsonResponse($response);
-        $items = $parsed[$dataKey];
-        $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
-
-        for ( $i = 2; $i < $totalPages; $i++ ) {
-            $moreItems = $this->sendParseRequest('GET', $endpoint, $dataKey, array_merge($options, [
+        $items = [];
+        $totalPages = 1;
+        for ( $i = 1; $i <= $totalPages; $i++ ) {
+            $res = $this->sendRequest('GET', $endpoint, array_merge($options, [
                 'query' => [
-                    'page' => $i
-                ]
+                    'page' => $i,
+                    'limit' => 500,
+                ],
             ]));
+            $parsed = $this->parseJsonResponse($res);
+            $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
+            $moreItems = $parsed[$dataKey];
             $items = array_merge($items, $moreItems);
         }
 
