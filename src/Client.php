@@ -373,4 +373,41 @@ class Client {
         ]);
     }
 
+    /**
+     * @return array
+     */
+    public function getOrders() {
+        return $this->getPaginatedEndpoint('/orders', 'Orders');
+    }
+
+    /**
+     * @param $documentNumber
+     * @return array
+     */
+    public function getOrder($documentNumber) {
+        $endpoint = sprintf('/orders/%s', $documentNumber);
+        return $this->sendParseRequest('GET', $endpoint, 'Order');
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function createOrder(array $data) {
+        return $this->sendParseRequest('POST', '/orders', 'Order', [
+            'json' => [
+                'Order' => $data
+            ]
+        ]);
+    }
+
+    /**
+     * @param $orderId
+     * @return array
+     */
+    public function cancelOrder($orderId) {
+        $endpoint = sprintf('/orders/%s/cancel', $orderId);
+        return $this->sendParseRequest('PUT', $endpoint);
+    }
+
 }

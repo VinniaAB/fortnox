@@ -109,4 +109,31 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         var_dump($r);
     }
 
+    public function testGetOrders() {
+        $result = $this->client->getOrders();
+        var_dump($result);
+        $this->assertTrue(is_array($result));
+    }
+
+    public function testGetSingleOrder() {
+        $result = $this->client->getOrder(13);
+        $this->assertEquals('Helmut AB', $result['CustomerName']);
+    }
+
+    public function testCreateOrder() {
+        $result = $this->client->createOrder([
+           'CustomerNumber' => 6,
+            'OrderRows' => [
+                'OrderRow' => [
+                    'ArticleNumber' => 3,
+                    'DeliveredQuantity' => 10,
+                    'Description' => 'Från testcaset',
+                    'OrderedQuantity' => 10,
+                    'Unit' => 'st'
+                ]
+            ]
+        ]);
+        $this->assertEquals('Vinnia AB', $result['CustomerName']);
+    }
+
 }
