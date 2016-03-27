@@ -136,4 +136,27 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals('Vinnia AB', $result['CustomerName']);
     }
 
+    public function testCreateDeleteArticle() {
+        $result = $this->client->createArticle([
+            'Description' => 'A testarticle'
+        ]);
+
+        $this->assertTrue(is_array($result));
+
+        $result = $this->client->deleteArticle($result['ArticleNumber']);
+        $this->assertTrue(empty($result));
+    }
+
+    public function testGetArticle(){
+        $result = $this->client->getArticle(1);
+        var_dump($result);
+        $this->assertEquals('1', $result['ArticleNumber']);
+    }
+
+    public function testGetArticles() {
+        $result = $this->client->getArticles();
+        var_dump($result);
+        $this->assertTrue(is_array($result));
+    }
+
 }

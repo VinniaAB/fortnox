@@ -373,6 +373,8 @@ class Client {
         ]);
     }
 
+    /************************ Orders *********************/
+
     /**
      * @return array
      */
@@ -409,5 +411,50 @@ class Client {
         $endpoint = sprintf('/orders/%s/cancel', $orderId);
         return $this->sendParseRequest('PUT', $endpoint);
     }
+
+    /************************ /Orders *********************/
+
+
+    /************************ Articles *********************/
+
+    /**
+     * @return array
+     */
+    public function getArticles() {
+        return $this->getPaginatedEndpoint('/articles', 'Articles');
+    }
+
+    /**
+     * @param $articleNumber
+     * @return array
+     */
+    public function getArticle($articleNumber) {
+        $endpoint = sprintf('/articles/%s', $articleNumber);
+        return $this->sendParseRequest('GET', $endpoint, 'Article');
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function createArticle(array $data) {
+        return $this->sendParseRequest('POST', '/articles', 'Article', [
+            'json' => [
+                'Article' => $data
+            ]
+        ]);
+    }
+
+
+    /**
+     * @param $articleNumber
+     * @return string
+     */
+    public function deleteArticle($articleNumber) {
+        $response = $this->sendRequest('DELETE', '/articles/'. $articleNumber);
+        return (string) $response->getBody();
+    }
+
+    /************************ /Articles *********************/
 
 }
