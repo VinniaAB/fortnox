@@ -8,10 +8,10 @@ use Psr\Http\Message\StreamInterface;
 
 class Client {
 
-    const API_URL = 'api.fortnox.se/3';
+    const API_URL = 'https://api.fortnox.se/3';
 
     /**
-     * @var HttpClient
+     * @var ClientInterface
      */
     private $httpClient;
 
@@ -26,11 +26,6 @@ class Client {
     private $clientSecret;
 
     /**
-     * @var string
-     */
-    private $url;
-
-    /**
      * @var ResponseInterface
      */
     private $response;
@@ -40,14 +35,11 @@ class Client {
      * @param ClientInterface $client
      * @param string $accessToken
      * @param string $clientSecret
-     * @param bool $https
      */
-    function __construct(ClientInterface $client, $accessToken, $clientSecret, $https = true) {
+    function __construct(ClientInterface $client, $accessToken, $clientSecret) {
         $this->httpClient = $client;
         $this->accessToken = $accessToken;
         $this->clientSecret = $clientSecret;
-
-        $this->url = $https ? 'https://' : 'http://' . self::API_URL;
     }
 
     /**
