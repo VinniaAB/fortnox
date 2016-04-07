@@ -285,6 +285,8 @@ class Client {
         ]);
     }
 
+    #region Project methods
+
     /**
      * @return string[][] array of projects
      */
@@ -334,6 +336,10 @@ class Client {
         return (string) $response->getBody();
     }
 
+    #endregion
+
+    #region Voucher methods
+
     /**
      * @param string $financialYearDate date of the financial year to use (Y-m-d)
      * @return array
@@ -373,7 +379,9 @@ class Client {
         ]);
     }
 
-    /************************ Orders *********************/
+    #endregion
+
+    #region Order methods
 
     /**
      * @return array
@@ -412,10 +420,10 @@ class Client {
         return $this->sendParseRequest('PUT', $endpoint);
     }
 
-    /************************ /Orders *********************/
+    #endregion
 
 
-    /************************ Articles *********************/
+    #region Article methods
 
     /**
      * @return array
@@ -455,6 +463,6 @@ class Client {
         return (string) $response->getBody();
     }
 
-    /************************ /Articles *********************/
+    #endregion
 
 }
