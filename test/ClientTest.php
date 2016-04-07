@@ -26,8 +26,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->client = new Client(
             $guzzle,
             $_ENV['ACCESS_TOKEN'],
-            $_ENV['CLIENT_SECRET'],
-            $https = false
+            $_ENV['CLIENT_SECRET']
         );
     }
 
