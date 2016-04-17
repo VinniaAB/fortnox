@@ -5,6 +5,7 @@ namespace Vinnia\Fortnox;
 use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
+use DateTimeInterface;
 
 class Client {
 
@@ -26,20 +27,25 @@ class Client {
     private $clientSecret;
 
     /**
-     * @var ResponseInterface
-     */
-    private $response;
-
-    /**
      * Client constructor.
      * @param ClientInterface $client
      * @param string $accessToken
      * @param string $clientSecret
      */
-    function __construct(ClientInterface $client, $accessToken, $clientSecret) {
+    function __construct(ClientInterface $client, string $accessToken, string $clientSecret) {
         $this->httpClient = $client;
         $this->accessToken = $accessToken;
         $this->clientSecret = $clientSecret;
+    }
+
+    /**
+     * @param string $accessToken
+     * @param string $clientSecret
+     * @return Client
+     */
+    public static function make(string $accessToken, string $clientSecret): self {
+        $guzzle = new \GuzzleHttp\Client();
+        return new self($guzzle, $accessToken, $clientSecret);
     }
 
     /**
@@ -48,8 +54,8 @@ class Client {
      * @param array $options
      * @return ResponseInterface
      */
-    protected function sendRequest($method, $endpoint, array $options = []) {
-        $res = $this->httpClient->request($method, self::API_URL . $endpoint, array_merge([
+    protected function sendRequest(string $method, string $endpoint, array $options = []): ResponseInterface {
+        return $this->httpClient->request($method, self::API_URL . $endpoint, array_merge([
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
@@ -57,38 +63,15 @@ class Client {
                 'Access-Token' => $this->accessToken
             ]
         ], $options));
-
-        $this->response = $res;
-
-        return $res;
-    }
-
-    /**
-     * @param string $method
-     * @param string $endpoint
-     * @param string $dataKey json key to move to before returning
-     * @param array $options
-     * @return array
-     */
-    protected function sendParseRequest($method, $endpoint, $dataKey = '', array $options = []) {
-        $res = $this->sendRequest($method, $endpoint, $options);
-        $json = $this->parseJsonResponse($res);
-
-        if ( $dataKey !== '' ) {
-            $json = $json[$dataKey];
-        }
-
-        return $json;
     }
 
     /**
      * @param string $endpoint
-     * @param string $dataKey
      * @param array $options
-     * @return array
+     * @return ResponseInterface[]
      */
-    protected function getPaginatedEndpoint($endpoint, $dataKey, array $options = []) {
-        $items = [];
+    protected function getPaginatedEndpoint(string $endpoint, array $options = []): array {
+        $responses = [];
         $totalPages = 1;
         for ( $i = 1; $i <= $totalPages; $i++ ) {
             $res = $this->sendRequest('GET', $endpoint, array_merge($options, [
@@ -99,49 +82,41 @@ class Client {
             ]));
             $parsed = $this->parseJsonResponse($res);
             $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
-            $moreItems = $parsed[$dataKey];
-            $items = array_merge($items, $moreItems);
+            $responses[] = $res;
         }
 
-        return $items;
+        return $responses;
     }
 
     /**
      * @param ResponseInterface $res
      * @return array
      */
-    protected function parseJsonResponse(ResponseInterface $res) {
+    protected function parseJsonResponse(ResponseInterface $res): array {
         return json_decode((string) $res->getBody(), $assoc = true);
     }
 
     /**
+     * @return ResponseInterface[]
+     */
+    public function getCustomers(): array {
+        return $this->getPaginatedEndpoint('/customers');
+    }
+
+    /**
+     * @param string $customerNumber
      * @return ResponseInterface
      */
-    public function getResponse() {
-        return $this->response;
-    }
-
-    /**
-     * @return string[][] array of customers
-     */
-    public function getCustomers() {
-        return $this->getPaginatedEndpoint('/customers', 'Customers');
-    }
-
-    /**
-     * @param int $customerNumber
-     * @return string[] customer
-     */
-    public function getCustomer($customerNumber) {
-        return $this->sendParseRequest('GET', '/customers/' . $customerNumber, 'Customer');
+    public function getCustomer(string $customerNumber): ResponseInterface {
+        return $this->sendRequest('GET', '/customers/' . $customerNumber);
     }
 
     /**
      * @param string[] $data customer data
-     * @return string[] customer
+     * @return ResponseInterface
      */
-    public function createCustomer(array $data) {
-        return $this->sendParseRequest('POST', '/customers', 'Customer', [
+    public function createCustomer(array $data): ResponseInterface {
+        return $this->sendRequest('POST', '/customers', [
             'json' => [
                 'Customer' => $data
             ]
@@ -149,12 +124,12 @@ class Client {
     }
 
     /**
-     * @param int $customerNumber
+     * @param string $customerNumber
      * @param string[] $data
-     * @return string[] customer
+     * @return ResponseInterface
      */
-    public function updateCustomer($customerNumber, array $data) {
-        return $this->sendParseRequest('PUT', '/customers/' . $customerNumber, 'Customer', [
+    public function updateCustomer(string $customerNumber, array $data): ResponseInterface {
+        return $this->sendRequest('PUT', '/customers/' . $customerNumber, [
             'json' => [
                 'Customer' => $data
             ]
@@ -162,64 +137,62 @@ class Client {
     }
 
     /**
-     * @param $customerNumber
-     * @return string response body
+     * @param string $customerNumber
+     * @return ResponseInterface
      */
-    public function deleteCustomer($customerNumber) {
+    public function deleteCustomer(string $customerNumber): ResponseInterface {
         $response = $this->sendRequest('DELETE', '/customers/' . $customerNumber);
         return (string) $response->getBody();
     }
 
     /**
-     * @return string[][] array of suppliers
+     * @return ResponseInterface[]
      */
-    public function getSuppliers() {
-        return $this->getPaginatedEndpoint('/suppliers', 'Suppliers');
+    public function getSuppliers(): array {
+        return $this->getPaginatedEndpoint('/suppliers');
     }
 
     /**
      * @param string $id
-     * @return string[] supplier
+     * @return ResponseInterface
      */
-    public function getSupplier($id) {
-        return $this->sendParseRequest('GET', '/suppliers/' . $id, 'Supplier');
+    public function getSupplier(string $id): ResponseInterface {
+        return $this->sendRequest('GET', '/suppliers/' . $id, 'Supplier');
     }
 
     /**
-     * @param int $id
-     * @return string file body
+     * @param string $id
+     * @return ResponseInterface
      */
-    public function getInboxFile($id) {
-        $response = $this->sendRequest('GET', '/inbox/' . $id);
-        return $this->parseJsonResponse($response);
+    public function getInboxFile(string $id): ResponseInterface {
+        return $this->sendRequest('GET', '/inbox/' . $id);
     }
 
     /**
-     * @param mixed $id
-     * @return string file body
+     * @param string $id
+     * @return ResponseInterface
      */
-    public function deleteInboxFile($id) {
-        $response = $this->sendRequest('DELETE', '/inbox/' . $id);
-        return (string) $response->getBody();
+    public function deleteInboxFile(string $id): ResponseInterface {
+        return $this->sendRequest('DELETE', '/inbox/' . $id);
     }
 
     /**
      * @param StreamInterface $data
-     * @return string[]
+     * @return ResponseInterface
      */
-    public function putInboxFile(StreamInterface $data) {
-        return $this->sendParseRequest('POST', '/inbox', 'File', [
+    public function putInboxFile(StreamInterface $data): ResponseInterface {
+        return $this->sendRequest('POST', '/inbox', [
             'body' => $data
         ]);
     }
 
     /**
-     * @param mixed $supplierInvoiceNumber
-     * @param mixed $fileId
-     * @return string[]
+     * @param string $supplierInvoiceNumber
+     * @param string $fileId
+     * @return ResponseInterface
      */
-    public function createSupplierInvoiceFileConnection($supplierInvoiceNumber, $fileId) {
-        return $this->sendParseRequest('POST', '/supplierinvoicefileconnections', 'SupplierInvoiceFileConnection', [
+    public function createSupplierInvoiceFileConnection(string $supplierInvoiceNumber, string $fileId): ResponseInterface {
+        return $this->sendRequest('POST', '/supplierinvoicefileconnections', [
             'json' => [
                 'SupplierInvoiceFileConnection' => [
                     'SupplierInvoiceNumber' => $supplierInvoiceNumber,
@@ -230,34 +203,34 @@ class Client {
     }
 
     /**
-     * @return string[][]
+     * @return ResponseInterface
      */
-    public function getSupplierInvoiceFileConnections() {
-        return $this->sendParseRequest('GET', '/supplierinvoicefileconnections', 'SupplierInvoiceFileConnections');
+    public function getSupplierInvoiceFileConnections(): ResponseInterface {
+        return $this->sendRequest('GET', '/supplierinvoicefileconnections');
     }
 
     /**
      * @param array $options guzzle request options
-     * @return string[][]
+     * @return ResponseInterface[]
      */
-    public function getSupplierInvoices(array $options = []) {
-        return $this->getPaginatedEndpoint('/supplierinvoices', 'SupplierInvoices', $options);
+    public function getSupplierInvoices(array $options = []): array {
+        return $this->getPaginatedEndpoint('/supplierinvoices', $options);
     }
 
     /**
-     * @param int $id
-     * @return string[]
+     * @param string $id
+     * @return ResponseInterface
      */
-    public function getSupplierInvoice($id) {
-        return $this->sendParseRequest('GET', '/supplierinvoices/' . $id, 'SupplierInvoice');
+    public function getSupplierInvoice(string $id): ResponseInterface {
+        return $this->sendRequest('GET', '/supplierinvoices/' . $id);
     }
 
     /**
      * @param array $data
-     * @return string[]
+     * @return ResponseInterface
      */
-    public function createSupplierInvoice(array $data) {
-        return $this->sendParseRequest('POST', '/supplierinvoices', 'SupplierInvoice', [
+    public function createSupplierInvoice(array $data): ResponseInterface {
+        return $this->sendRequest('POST', '/supplierinvoices', [
             'json' => [
                 'SupplierInvoice' => $data
             ]
@@ -265,12 +238,12 @@ class Client {
     }
 
     /**
-     * @param int $id
+     * @param string $id
      * @param array $data the supplier invoice data
-     * @return array
+     * @return ResponseInterface
      */
-    public function updateSupplierInvoice($id, array $data) {
-        return $this->sendParseRequest('PUT', '/supplierinvoices/' . $id, 'SupplierInvoice', [
+    public function updateSupplierInvoice(string $id, array $data): ResponseInterface {
+        return $this->sendRequest('PUT', '/supplierinvoices/' . $id, [
             'json' => [
                 'SupplierInvoice' => $data,
             ],
@@ -280,26 +253,26 @@ class Client {
     #region Project methods
 
     /**
-     * @return string[][] array of projects
+     * @return ResponseInterface
      */
-    public function getProjects() {
-        return $this->sendParseRequest('GET', '/projects', 'Projects');
+    public function getProjects(): ResponseInterface {
+        return $this->sendRequest('GET', '/projects');
     }
 
     /**
-     * @param int $projectNumber
-     * @return string[] project
+     * @param string $projectNumber
+     * @return ResponseInterface
      */
-    public function getProject($projectNumber) {
-        return $this->sendParseRequest('GET', '/projects/' . $projectNumber, 'Project');
+    public function getProject(string $projectNumber): ResponseInterface {
+        return $this->sendRequest('GET', '/projects/' . $projectNumber);
     }
 
     /**
      * @param string[] $data
-     * @return string[] project
+     * @return ResponseInterface
      */
-    public function createProject(array $data) {
-        return $this->sendParseRequest('POST', '/projects', 'Project', [
+    public function createProject(array $data): ResponseInterface {
+        return $this->sendRequest('POST', '/projects', [
             'json' => [
                 'Project' => $data
             ]
@@ -307,12 +280,12 @@ class Client {
     }
 
     /**
-     * @param int $projectNumber
+     * @param string $projectNumber
      * @param string[] $data
-     * @return mixed
+     * @return ResponseInterface
      */
-    public function updateProject($projectNumber, array $data) {
-        return $this->sendParseRequest('PUT', '/projects/' . $projectNumber, 'Project', [
+    public function updateProject(string $projectNumber, array $data): ResponseInterface {
+        return $this->sendRequest('PUT', '/projects/' . $projectNumber, [
             'json' => [
                 'Project' => $data
             ]
@@ -320,12 +293,11 @@ class Client {
     }
 
     /**
-     * @param int $projectNumber
-     * @return string
+     * @param string $projectNumber
+     * @return ResponseInterface
      */
-    public function deleteProject($projectNumber) {
-        $response = $this->sendRequest('DELETE', '/projects/' . $projectNumber);
-        return (string) $response->getBody();
+    public function deleteProject(string $projectNumber): ResponseInterface {
+        return $this->sendRequest('DELETE', '/projects/' . $projectNumber);
     }
 
     #endregion
@@ -333,13 +305,13 @@ class Client {
     #region Voucher methods
 
     /**
-     * @param string $financialYearDate date of the financial year to use (Y-m-d)
-     * @return array
+     * @param DateTimeInterface $financialYearDate date of the financial year to use (Y-m-d)
+     * @return ResponseInterface[]
      */
-    public function getVouchers($financialYearDate) {
-        return $this->getPaginatedEndpoint('/vouchers', 'Vouchers', [
+    public function getVouchers(DateTimeInterface $financialYearDate): array {
+        return $this->getPaginatedEndpoint('/vouchers', [
             'query' => [
-                'financialyeardate' => $financialYearDate
+                'financialyeardate' => $financialYearDate->format('Y-m-d')
             ]
         ]);
     }
@@ -347,24 +319,24 @@ class Client {
     /**
      * @param string $series
      * @param string $voucherNumber
-     * @param string $financialYearDate date of the financial year to use (Y-m-d)
-     * @return array
+     * @param DateTimeInterface $financialYearDate date of the financial year
+     * @return ResponseInterface
      */
-    public function getVoucher($series, $voucherNumber, $financialYearDate) {
+    public function getVoucher(string $series, string $voucherNumber, DateTimeInterface $financialYearDate): ResponseInterface {
         $endpoint = sprintf('/vouchers/%s/%s', $series, $voucherNumber);
-        return $this->sendParseRequest('GET', $endpoint, 'Voucher', [
+        return $this->sendRequest('GET', $endpoint, [
             'query' => [
-                'financialyeardate' => $financialYearDate
+                'financialyeardate' => $financialYearDate->format('Y-m-d')
             ]
         ]);
     }
 
     /**
      * @param array $data
-     * @return array
+     * @return ResponseInterface
      */
-    public function createVoucher(array $data) {
-        return $this->sendParseRequest('POST', '/vouchers', 'Voucher', [
+    public function createVoucher(array $data): ResponseInterface {
+        return $this->sendRequest('POST', '/vouchers', [
             'json' => [
                 'Voucher' => $data
             ]
@@ -376,27 +348,26 @@ class Client {
     #region Order methods
 
     /**
-     * @return array
+     * @return ResponseInterface[]
      */
-    public function getOrders() {
-        return $this->getPaginatedEndpoint('/orders', 'Orders');
+    public function getOrders(): array {
+        return $this->getPaginatedEndpoint('/orders');
     }
 
     /**
-     * @param $documentNumber
-     * @return array
+     * @param string $documentNumber
+     * @return ResponseInterface
      */
-    public function getOrder($documentNumber) {
-        $endpoint = sprintf('/orders/%s', $documentNumber);
-        return $this->sendParseRequest('GET', $endpoint, 'Order');
+    public function getOrder(string $documentNumber): ResponseInterface {
+        return $this->sendRequest('GET', '/orders/' . $documentNumber);
     }
 
     /**
      * @param array $data
-     * @return array
+     * @return ResponseInterface
      */
-    public function createOrder(array $data) {
-        return $this->sendParseRequest('POST', '/orders', 'Order', [
+    public function createOrder(array $data): ResponseInterface {
+        return $this->sendRequest('POST', '/orders', [
             'json' => [
                 'Order' => $data
             ]
@@ -404,12 +375,12 @@ class Client {
     }
 
     /**
-     * @param $orderId
-     * @return array
+     * @param string $orderId
+     * @return ResponseInterface
      */
-    public function cancelOrder($orderId) {
+    public function cancelOrder(string $orderId): ResponseInterface {
         $endpoint = sprintf('/orders/%s/cancel', $orderId);
-        return $this->sendParseRequest('PUT', $endpoint);
+        return $this->sendRequest('PUT', $endpoint);
     }
 
     #endregion
@@ -418,27 +389,27 @@ class Client {
     #region Article methods
 
     /**
-     * @return array
+     * @return ResponseInterface[]
      */
-    public function getArticles() {
-        return $this->getPaginatedEndpoint('/articles', 'Articles');
+    public function getArticles(): array {
+        return $this->getPaginatedEndpoint('/articles');
     }
 
     /**
      * @param $articleNumber
-     * @return array
+     * @return ResponseInterface
      */
-    public function getArticle($articleNumber) {
+    public function getArticle(string $articleNumber): ResponseInterface {
         $endpoint = sprintf('/articles/%s', $articleNumber);
-        return $this->sendParseRequest('GET', $endpoint, 'Article');
+        return $this->sendRequest('GET', $endpoint);
     }
 
     /**
      * @param array $data
-     * @return array
+     * @return ResponseInterface
      */
-    public function createArticle(array $data) {
-        return $this->sendParseRequest('POST', '/articles', 'Article', [
+    public function createArticle(array $data): ResponseInterface {
+        return $this->sendRequest('POST', '/articles', [
             'json' => [
                 'Article' => $data
             ]
@@ -448,11 +419,10 @@ class Client {
 
     /**
      * @param $articleNumber
-     * @return string
+     * @return ResponseInterface
      */
-    public function deleteArticle($articleNumber) {
-        $response = $this->sendRequest('DELETE', '/articles/'. $articleNumber);
-        return (string) $response->getBody();
+    public function deleteArticle(string $articleNumber): ResponseInterface {
+        return $this->sendRequest('DELETE', '/articles/'. $articleNumber);
     }
 
     #endregion

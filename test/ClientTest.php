@@ -21,13 +21,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
     public function setUp() {
         parent::setUp();
 
-        $guzzle = new \GuzzleHttp\Client();
-        var_dump($_ENV);
-        $this->client = new Client(
-            $guzzle,
-            $_ENV['ACCESS_TOKEN'],
-            $_ENV['CLIENT_SECRET']
-        );
+        $config = require __DIR__ . '/../env.php';
+        $this->client = Client::make($config['ACCESS_TOKEN'], $config['CLIENT_SECRET']);
     }
 
     public function testGetCustomers() {
