@@ -85,21 +85,12 @@ class Client
                     'limit' => 500,
                 ],
             ]));
-            $parsed = $this->parseJsonResponse($res);
-            $totalPages = (int)$parsed['MetaInformation']['@TotalPages'];
+            $parsed = Util::parseResponse($res, 'MetaInformation');
+            $totalPages = (int)$parsed['@TotalPages'];
             $responses[] = $res;
         }
 
         return $responses;
-    }
-
-    /**
-     * @param ResponseInterface $res
-     * @return array
-     */
-    protected function parseJsonResponse(ResponseInterface $res): array
-    {
-        return json_decode((string)$res->getBody(), $assoc = true);
     }
 
     /**
