@@ -7,7 +7,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use DateTimeInterface;
 
-class Client {
+class Client
+{
 
     const API_URL = 'https://api.fortnox.se/3';
 
@@ -32,7 +33,8 @@ class Client {
      * @param string $accessToken
      * @param string $clientSecret
      */
-    function __construct(ClientInterface $client, string $accessToken, string $clientSecret) {
+    function __construct(ClientInterface $client, string $accessToken, string $clientSecret)
+    {
         $this->httpClient = $client;
         $this->accessToken = $accessToken;
         $this->clientSecret = $clientSecret;
@@ -43,7 +45,8 @@ class Client {
      * @param string $clientSecret
      * @return Client
      */
-    public static function make(string $accessToken, string $clientSecret): self {
+    public static function make(string $accessToken, string $clientSecret): self
+    {
         $guzzle = new \GuzzleHttp\Client();
         return new self($guzzle, $accessToken, $clientSecret);
     }
@@ -54,7 +57,8 @@ class Client {
      * @param array $options
      * @return ResponseInterface
      */
-    protected function sendRequest(string $method, string $endpoint, array $options = []): ResponseInterface {
+    protected function sendRequest(string $method, string $endpoint, array $options = []): ResponseInterface
+    {
         return $this->httpClient->request($method, self::API_URL . $endpoint, array_merge([
             'headers' => [
                 'Content-Type' => 'application/json',
@@ -70,10 +74,11 @@ class Client {
      * @param array $options
      * @return ResponseInterface[]
      */
-    protected function getPaginatedEndpoint(string $endpoint, array $options = []): array {
+    protected function getPaginatedEndpoint(string $endpoint, array $options = []): array
+    {
         $responses = [];
         $totalPages = 1;
-        for ( $i = 1; $i <= $totalPages; $i++ ) {
+        for ($i = 1; $i <= $totalPages; $i++) {
             $res = $this->sendRequest('GET', $endpoint, array_merge($options, [
                 'query' => [
                     'page' => $i,
@@ -81,7 +86,7 @@ class Client {
                 ],
             ]));
             $parsed = $this->parseJsonResponse($res);
-            $totalPages = (int) $parsed['MetaInformation']['@TotalPages'];
+            $totalPages = (int)$parsed['MetaInformation']['@TotalPages'];
             $responses[] = $res;
         }
 
@@ -92,14 +97,16 @@ class Client {
      * @param ResponseInterface $res
      * @return array
      */
-    protected function parseJsonResponse(ResponseInterface $res): array {
-        return json_decode((string) $res->getBody(), $assoc = true);
+    protected function parseJsonResponse(ResponseInterface $res): array
+    {
+        return json_decode((string)$res->getBody(), $assoc = true);
     }
 
     /**
      * @return ResponseInterface[]
      */
-    public function getCustomers(): array {
+    public function getCustomers(): array
+    {
         return $this->getPaginatedEndpoint('/customers');
     }
 
@@ -107,7 +114,8 @@ class Client {
      * @param string $customerNumber
      * @return ResponseInterface
      */
-    public function getCustomer(string $customerNumber): ResponseInterface {
+    public function getCustomer(string $customerNumber): ResponseInterface
+    {
         return $this->sendRequest('GET', '/customers/' . $customerNumber);
     }
 
@@ -115,7 +123,8 @@ class Client {
      * @param string[] $data customer data
      * @return ResponseInterface
      */
-    public function createCustomer(array $data): ResponseInterface {
+    public function createCustomer(array $data): ResponseInterface
+    {
         return $this->sendRequest('POST', '/customers', [
             'json' => [
                 'Customer' => $data
@@ -128,7 +137,8 @@ class Client {
      * @param string[] $data
      * @return ResponseInterface
      */
-    public function updateCustomer(string $customerNumber, array $data): ResponseInterface {
+    public function updateCustomer(string $customerNumber, array $data): ResponseInterface
+    {
         return $this->sendRequest('PUT', '/customers/' . $customerNumber, [
             'json' => [
                 'Customer' => $data
@@ -140,15 +150,17 @@ class Client {
      * @param string $customerNumber
      * @return ResponseInterface
      */
-    public function deleteCustomer(string $customerNumber): ResponseInterface {
+    public function deleteCustomer(string $customerNumber): ResponseInterface
+    {
         $response = $this->sendRequest('DELETE', '/customers/' . $customerNumber);
-        return (string) $response->getBody();
+        return (string)$response->getBody();
     }
 
     /**
      * @return ResponseInterface[]
      */
-    public function getSuppliers(): array {
+    public function getSuppliers(): array
+    {
         return $this->getPaginatedEndpoint('/suppliers');
     }
 
@@ -156,7 +168,8 @@ class Client {
      * @param string $id
      * @return ResponseInterface
      */
-    public function getSupplier(string $id): ResponseInterface {
+    public function getSupplier(string $id): ResponseInterface
+    {
         return $this->sendRequest('GET', '/suppliers/' . $id, 'Supplier');
     }
 
@@ -164,7 +177,8 @@ class Client {
      * @param string $id
      * @return ResponseInterface
      */
-    public function getInboxFile(string $id): ResponseInterface {
+    public function getInboxFile(string $id): ResponseInterface
+    {
         return $this->sendRequest('GET', '/inbox/' . $id);
     }
 
@@ -172,7 +186,8 @@ class Client {
      * @param string $id
      * @return ResponseInterface
      */
-    public function deleteInboxFile(string $id): ResponseInterface {
+    public function deleteInboxFile(string $id): ResponseInterface
+    {
         return $this->sendRequest('DELETE', '/inbox/' . $id);
     }
 
@@ -180,7 +195,8 @@ class Client {
      * @param StreamInterface $data
      * @return ResponseInterface
      */
-    public function putInboxFile(StreamInterface $data): ResponseInterface {
+    public function putInboxFile(StreamInterface $data): ResponseInterface
+    {
         return $this->sendRequest('POST', '/inbox', [
             'body' => $data
         ]);
@@ -191,7 +207,8 @@ class Client {
      * @param string $fileId
      * @return ResponseInterface
      */
-    public function createSupplierInvoiceFileConnection(string $supplierInvoiceNumber, string $fileId): ResponseInterface {
+    public function createSupplierInvoiceFileConnection(string $supplierInvoiceNumber, string $fileId): ResponseInterface
+    {
         return $this->sendRequest('POST', '/supplierinvoicefileconnections', [
             'json' => [
                 'SupplierInvoiceFileConnection' => [
@@ -205,7 +222,8 @@ class Client {
     /**
      * @return ResponseInterface
      */
-    public function getSupplierInvoiceFileConnections(): ResponseInterface {
+    public function getSupplierInvoiceFileConnections(): ResponseInterface
+    {
         return $this->sendRequest('GET', '/supplierinvoicefileconnections');
     }
 
@@ -213,7 +231,8 @@ class Client {
      * @param array $options guzzle request options
      * @return ResponseInterface[]
      */
-    public function getSupplierInvoices(array $options = []): array {
+    public function getSupplierInvoices(array $options = []): array
+    {
         return $this->getPaginatedEndpoint('/supplierinvoices', $options);
     }
 
@@ -221,7 +240,8 @@ class Client {
      * @param string $id
      * @return ResponseInterface
      */
-    public function getSupplierInvoice(string $id): ResponseInterface {
+    public function getSupplierInvoice(string $id): ResponseInterface
+    {
         return $this->sendRequest('GET', '/supplierinvoices/' . $id);
     }
 
@@ -229,7 +249,8 @@ class Client {
      * @param array $data
      * @return ResponseInterface
      */
-    public function createSupplierInvoice(array $data): ResponseInterface {
+    public function createSupplierInvoice(array $data): ResponseInterface
+    {
         return $this->sendRequest('POST', '/supplierinvoices', [
             'json' => [
                 'SupplierInvoice' => $data
@@ -242,7 +263,8 @@ class Client {
      * @param array $data the supplier invoice data
      * @return ResponseInterface
      */
-    public function updateSupplierInvoice(string $id, array $data): ResponseInterface {
+    public function updateSupplierInvoice(string $id, array $data): ResponseInterface
+    {
         return $this->sendRequest('PUT', '/supplierinvoices/' . $id, [
             'json' => [
                 'SupplierInvoice' => $data,
@@ -255,7 +277,8 @@ class Client {
     /**
      * @return ResponseInterface
      */
-    public function getProjects(): ResponseInterface {
+    public function getProjects(): ResponseInterface
+    {
         return $this->sendRequest('GET', '/projects');
     }
 
@@ -263,7 +286,8 @@ class Client {
      * @param string $projectNumber
      * @return ResponseInterface
      */
-    public function getProject(string $projectNumber): ResponseInterface {
+    public function getProject(string $projectNumber): ResponseInterface
+    {
         return $this->sendRequest('GET', '/projects/' . $projectNumber);
     }
 
@@ -271,7 +295,8 @@ class Client {
      * @param string[] $data
      * @return ResponseInterface
      */
-    public function createProject(array $data): ResponseInterface {
+    public function createProject(array $data): ResponseInterface
+    {
         return $this->sendRequest('POST', '/projects', [
             'json' => [
                 'Project' => $data
@@ -284,7 +309,8 @@ class Client {
      * @param string[] $data
      * @return ResponseInterface
      */
-    public function updateProject(string $projectNumber, array $data): ResponseInterface {
+    public function updateProject(string $projectNumber, array $data): ResponseInterface
+    {
         return $this->sendRequest('PUT', '/projects/' . $projectNumber, [
             'json' => [
                 'Project' => $data
@@ -296,7 +322,8 @@ class Client {
      * @param string $projectNumber
      * @return ResponseInterface
      */
-    public function deleteProject(string $projectNumber): ResponseInterface {
+    public function deleteProject(string $projectNumber): ResponseInterface
+    {
         return $this->sendRequest('DELETE', '/projects/' . $projectNumber);
     }
 
@@ -308,7 +335,8 @@ class Client {
      * @param DateTimeInterface $financialYearDate date of the financial year to use (Y-m-d)
      * @return ResponseInterface[]
      */
-    public function getVouchers(DateTimeInterface $financialYearDate): array {
+    public function getVouchers(DateTimeInterface $financialYearDate): array
+    {
         return $this->getPaginatedEndpoint('/vouchers', [
             'query' => [
                 'financialyeardate' => $financialYearDate->format('Y-m-d')
@@ -322,7 +350,8 @@ class Client {
      * @param DateTimeInterface $financialYearDate date of the financial year
      * @return ResponseInterface
      */
-    public function getVoucher(string $series, string $voucherNumber, DateTimeInterface $financialYearDate): ResponseInterface {
+    public function getVoucher(string $series, string $voucherNumber, DateTimeInterface $financialYearDate): ResponseInterface
+    {
         $endpoint = sprintf('/vouchers/%s/%s', $series, $voucherNumber);
         return $this->sendRequest('GET', $endpoint, [
             'query' => [
@@ -335,7 +364,8 @@ class Client {
      * @param array $data
      * @return ResponseInterface
      */
-    public function createVoucher(array $data): ResponseInterface {
+    public function createVoucher(array $data): ResponseInterface
+    {
         return $this->sendRequest('POST', '/vouchers', [
             'json' => [
                 'Voucher' => $data
@@ -350,7 +380,8 @@ class Client {
     /**
      * @return ResponseInterface[]
      */
-    public function getOrders(): array {
+    public function getOrders(): array
+    {
         return $this->getPaginatedEndpoint('/orders');
     }
 
@@ -358,7 +389,8 @@ class Client {
      * @param string $documentNumber
      * @return ResponseInterface
      */
-    public function getOrder(string $documentNumber): ResponseInterface {
+    public function getOrder(string $documentNumber): ResponseInterface
+    {
         return $this->sendRequest('GET', '/orders/' . $documentNumber);
     }
 
@@ -366,7 +398,8 @@ class Client {
      * @param array $data
      * @return ResponseInterface
      */
-    public function createOrder(array $data): ResponseInterface {
+    public function createOrder(array $data): ResponseInterface
+    {
         return $this->sendRequest('POST', '/orders', [
             'json' => [
                 'Order' => $data
@@ -378,7 +411,8 @@ class Client {
      * @param string $orderId
      * @return ResponseInterface
      */
-    public function cancelOrder(string $orderId): ResponseInterface {
+    public function cancelOrder(string $orderId): ResponseInterface
+    {
         $endpoint = sprintf('/orders/%s/cancel', $orderId);
         return $this->sendRequest('PUT', $endpoint);
     }
@@ -391,7 +425,8 @@ class Client {
     /**
      * @return ResponseInterface[]
      */
-    public function getArticles(): array {
+    public function getArticles(): array
+    {
         return $this->getPaginatedEndpoint('/articles');
     }
 
@@ -399,7 +434,8 @@ class Client {
      * @param $articleNumber
      * @return ResponseInterface
      */
-    public function getArticle(string $articleNumber): ResponseInterface {
+    public function getArticle(string $articleNumber): ResponseInterface
+    {
         $endpoint = sprintf('/articles/%s', $articleNumber);
         return $this->sendRequest('GET', $endpoint);
     }
@@ -408,7 +444,8 @@ class Client {
      * @param array $data
      * @return ResponseInterface
      */
-    public function createArticle(array $data): ResponseInterface {
+    public function createArticle(array $data): ResponseInterface
+    {
         return $this->sendRequest('POST', '/articles', [
             'json' => [
                 'Article' => $data
@@ -421,8 +458,9 @@ class Client {
      * @param $articleNumber
      * @return ResponseInterface
      */
-    public function deleteArticle(string $articleNumber): ResponseInterface {
-        return $this->sendRequest('DELETE', '/articles/'. $articleNumber);
+    public function deleteArticle(string $articleNumber): ResponseInterface
+    {
+        return $this->sendRequest('DELETE', '/articles/' . $articleNumber);
     }
 
     #endregion

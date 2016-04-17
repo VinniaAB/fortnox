@@ -11,21 +11,24 @@ namespace Vinnia\Fortnox\Test;
 use GuzzleHttp\Exception\ClientException;
 use Vinnia\Fortnox\Client;
 
-class ClientTest extends \PHPUnit_Framework_TestCase {
+class ClientTest extends \PHPUnit_Framework_TestCase
+{
 
     /**
      * @var Client
      */
     public $client;
 
-    public function setUp() {
+    public function setUp()
+    {
         parent::setUp();
 
         $config = require __DIR__ . '/../env.php';
         $this->client = Client::make($config['ACCESS_TOKEN'], $config['CLIENT_SECRET']);
     }
 
-    public function testGetCustomers() {
+    public function testGetCustomers()
+    {
         $customers = $this->client->getCustomers();
 
         var_dump($customers);
@@ -34,7 +37,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->assertArrayHasKey('Address1', $customers[0]);
     }
 
-    public function testCreateDeleteCustomer() {
+    public function testCreateDeleteCustomer()
+    {
         $customer = [
             'Name' => 'Helmut Schneider'
         ];
@@ -46,7 +50,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->client->deleteCustomer($result['CustomerNumber']);
     }
 
-    public function testUpdateCustomer() {
+    public function testUpdateCustomer()
+    {
         $customer = [
             'Name' => 'Helmut'
         ];
@@ -62,25 +67,29 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->client->deleteCustomer($result['CustomerNumber']);
     }
 
-    public function testGetProjects() {
+    public function testGetProjects()
+    {
         $result = $this->client->getProjects();
 
         $this->assertTrue(is_array($result));
     }
 
-    public function testGetVouchers() {
+    public function testGetVouchers()
+    {
         $result = $this->client->getVouchers('2015-01-01');
         var_dump($result);
         $this->assertTrue(is_array($result));
     }
 
-    public function testGetSingleVoucher() {
+    public function testGetSingleVoucher()
+    {
         $result = $this->client->getVoucher('A', 1, '2014-01-01');
 
         var_dump($result);
     }
 
-    public function testCreateVoucher() {
+    public function testCreateVoucher()
+    {
         $r = $this->client->createVoucher([
             'TransactionDate' => '2014-06-01',
             'VoucherSeries' => 'A',
@@ -97,26 +106,30 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         var_dump($r);
     }
 
-    public function testGetSupplierInvoices() {
+    public function testGetSupplierInvoices()
+    {
         $r = $this->client->getSupplierInvoices();
 
         var_dump($r);
     }
 
-    public function testGetOrders() {
+    public function testGetOrders()
+    {
         $result = $this->client->getOrders();
         var_dump($result);
         $this->assertTrue(is_array($result));
     }
 
-    public function testGetSingleOrder() {
+    public function testGetSingleOrder()
+    {
         $result = $this->client->getOrder(13);
         $this->assertEquals('Helmut AB', $result['CustomerName']);
     }
 
-    public function testCreateOrder() {
+    public function testCreateOrder()
+    {
         $result = $this->client->createOrder([
-           'CustomerNumber' => 6,
+            'CustomerNumber' => 6,
             'OrderRows' => [
                 'OrderRow' => [
                     'ArticleNumber' => 3,
@@ -130,7 +143,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals('Vinnia AB', $result['CustomerName']);
     }
 
-    public function testCreateDeleteArticle() {
+    public function testCreateDeleteArticle()
+    {
         $result = $this->client->createArticle([
             'Description' => 'A testarticle'
         ]);
@@ -141,13 +155,15 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue(empty($result));
     }
 
-    public function testGetArticle(){
+    public function testGetArticle()
+    {
         $result = $this->client->getArticle(1);
         var_dump($result);
         $this->assertEquals('1', $result['ArticleNumber']);
     }
 
-    public function testGetArticles() {
+    public function testGetArticles()
+    {
         $result = $this->client->getArticles();
         var_dump($result);
         $this->assertTrue(is_array($result));
