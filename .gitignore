@@ -17,5 +17,4 @@ vendor/
 composer.phar
 .env
 .env-test
-env.sample.php
-s
+env.php
