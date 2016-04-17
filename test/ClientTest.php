@@ -10,6 +10,7 @@ namespace Vinnia\Fortnox\Test;
 
 use GuzzleHttp\Exception\ClientException;
 use Vinnia\Fortnox\Client;
+use Vinnia\Fortnox\Util;
 
 class ClientTest extends \PHPUnit_Framework_TestCase
 {
@@ -29,7 +30,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGetCustomers()
     {
-        $customers = $this->client->getCustomers();
+        $responses = $this->client->getCustomers();
+        $customers = Util::parseResponseArray($responses, 'Customers');
 
         var_dump($customers);
 
