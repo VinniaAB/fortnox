@@ -14,25 +14,22 @@ class Util
 {
     /**
      * @param ResponseInterface $response
-     * @param string $key
      * @return array
      */
-    static function parseResponse(ResponseInterface $response, string $key): array
+    static function parseResponse(ResponseInterface $response): array
     {
-        $json = json_decode((string) $response->getBody(), $assoc = true);
-        return $json[$key];
+        return json_decode((string) $response->getBody(), $assoc = true);
     }
 
     /**
      * @param ResponseInterface[] $responses
-     * @param string $key
      * @return array
      */
-    static function parseResponseArray(array $responses, string $key) {
+    static function parseResponses(array $responses) {
         $data = [];
         foreach ($responses as $response) {
-            $d = Util::parseResponse($response, $key);
-            $data = array_merge($data, $d);
+            $d = Util::parseResponse($response);
+            $data[] = $d;
         }
         return $data;
     }

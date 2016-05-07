@@ -31,8 +31,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testGetCustomers()
     {
         $responses = $this->client->getCustomers();
-        $customers = Util::parseResponseArray($responses, 'Customers');
-
+        $data = Util::parseResponses($responses);
+        $customers = [];
+        foreach ($data as $res) {
+            $customers = array_merge($customers, $res['Customers']);
+        }
         var_dump($customers);
 
         $this->assertNotEmpty($customers);
@@ -46,6 +49,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         ];
 
         $result = $this->client->createCustomer($customer);
+        $result = Util::parseResponse($result);
+        $result = $result['Customer'];
 
         $this->assertEquals($customer['Name'], $result['Name']);
 
@@ -58,11 +63,15 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'Name' => 'Helmut'
         ];
         $result = $this->client->createCustomer($customer);
+        $result = Util::parseResponse($result);
+        $result = $result['Customer'];
         $customer['Name'] = 'Helmut Schneider';
         $result = $this->client->updateCustomer(
             $result['CustomerNumber'],
             $customer
         );
+        $result = Util::parseResponse($result);
+        $result = $result['Customer'];
 
         $this->assertEquals('Helmut Schneider', $result['Name']);
 
@@ -73,19 +82,20 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     {
         $result = $this->client->getProjects();
 
+
         $this->assertTrue(is_array($result));
     }
 
     public function testGetVouchers()
     {
-        $result = $this->client->getVouchers('2015-01-01');
+        $result = $this->client->getVouchers(new \DateTimeImmutable('2015-01-01'));
         var_dump($result);
         $this->assertTrue(is_array($result));
     }
 
     public function testGetSingleVoucher()
     {
-        $result = $this->client->getVoucher('A', 1, '2014-01-01');
+        $result = $this->client->getVoucher('A', 1, new \DateTimeImmutable('2014-01-01'));
 
         var_dump($result);
     }
@@ -118,6 +128,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testGetOrders()
     {
         $result = $this->client->getOrders();
+        $result = Util::parseResponses($result);
+        $orders = [];
+
+        foreach ($result as $res) {
+            $orders = array_merge($orders, $res['Orders']);
+        }
+
         var_dump($result);
         $this->assertTrue(is_array($result));
     }
@@ -125,24 +142,28 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testGetSingleOrder()
     {
         $result = $this->client->getOrder(13);
+        $result = Util::parseResponse($result)['Order'];
         $this->assertEquals('Helmut AB', $result['CustomerName']);
     }
 
     public function testCreateOrder()
     {
+        // if the customer does not have an organization number this will fail
         $result = $this->client->createOrder([
             'CustomerNumber' => 6,
             'OrderRows' => [
-                'OrderRow' => [
+                [
                     'ArticleNumber' => 3,
                     'DeliveredQuantity' => 10,
-                    'Description' => 'Från testcaset',
+                    'Description' => 'Hello',
                     'OrderedQuantity' => 10,
-                    'Unit' => 'st'
-                ]
-            ]
+                    'Unit' => 'st',
+                ],
+            ],
+
         ]);
-        $this->assertEquals('Vinnia AB', $result['CustomerName']);
+        $result = Util::parseResponse($result)['Order'];
+        $this->assertEquals('Vinnia AB!', $result['CustomerName']);
     }
 
     public function testCreateDeleteArticle()
@@ -150,16 +171,16 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $result = $this->client->createArticle([
             'Description' => 'A testarticle'
         ]);
+        $article = Util::parseResponse($result)['Article'];
 
-        $this->assertTrue(is_array($result));
-
-        $result = $this->client->deleteArticle($result['ArticleNumber']);
-        $this->assertTrue(empty($result));
+        $result = $this->client->deleteArticle($article['ArticleNumber']);
+        $this->assertEquals(204, $result->getStatusCode());
     }
 
     public function testGetArticle()
     {
         $result = $this->client->getArticle(1);
+        $result = Util::parseResponse($result)['Article'];
         var_dump($result);
         $this->assertEquals('1', $result['ArticleNumber']);
     }
@@ -169,6 +190,19 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $result = $this->client->getArticles();
         var_dump($result);
         $this->assertTrue(is_array($result));
+    }
+
+    public function testGetAccounts()
+    {
+        $responses = $this->client->getAccounts();
+        $responses = Util::parseResponses($responses);
+        $accounts = [];
+
+        foreach ($responses as $res) {
+            $accounts = array_merge($accounts, $res['Accounts']);
+        }
+
+        var_dump($accounts);
     }
 
 }

@@ -64,8 +64,8 @@ class Client
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
                 'Client-Secret' => $this->clientSecret,
-                'Access-Token' => $this->accessToken
-            ]
+                'Access-Token' => $this->accessToken,
+            ],
         ], $options));
     }
 
@@ -85,7 +85,7 @@ class Client
                     'limit' => 500,
                 ],
             ]));
-            $parsed = Util::parseResponse($res, 'MetaInformation');
+            $parsed = Util::parseResponse($res)['MetaInformation'];
             $totalPages = (int)$parsed['@TotalPages'];
             $responses[] = $res;
         }
@@ -94,11 +94,12 @@ class Client
     }
 
     /**
+     * @param array $options
      * @return ResponseInterface[]
      */
-    public function getCustomers(): array
+    public function getCustomers(array $options = []): array
     {
-        return $this->getPaginatedEndpoint('/customers');
+        return $this->getPaginatedEndpoint('/customers', $options);
     }
 
     /**
@@ -118,8 +119,8 @@ class Client
     {
         return $this->sendRequest('POST', '/customers', [
             'json' => [
-                'Customer' => $data
-            ]
+                'Customer' => $data,
+            ],
         ]);
     }
 
@@ -132,8 +133,8 @@ class Client
     {
         return $this->sendRequest('PUT', '/customers/' . $customerNumber, [
             'json' => [
-                'Customer' => $data
-            ]
+                'Customer' => $data,
+            ],
         ]);
     }
 
@@ -143,16 +144,16 @@ class Client
      */
     public function deleteCustomer(string $customerNumber): ResponseInterface
     {
-        $response = $this->sendRequest('DELETE', '/customers/' . $customerNumber);
-        return (string)$response->getBody();
+        return $this->sendRequest('DELETE', '/customers/' . $customerNumber);
     }
 
     /**
+     * @param array $options
      * @return ResponseInterface[]
      */
-    public function getSuppliers(): array
+    public function getSuppliers(array $options = []): array
     {
-        return $this->getPaginatedEndpoint('/suppliers');
+        return $this->getPaginatedEndpoint('/suppliers', $options);
     }
 
     /**
@@ -189,7 +190,7 @@ class Client
     public function putInboxFile(StreamInterface $data): ResponseInterface
     {
         return $this->sendRequest('POST', '/inbox', [
-            'body' => $data
+            'body' => $data,
         ]);
     }
 
@@ -205,8 +206,8 @@ class Client
                 'SupplierInvoiceFileConnection' => [
                     'SupplierInvoiceNumber' => $supplierInvoiceNumber,
                     'FileId' => $fileId,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 
@@ -215,7 +216,7 @@ class Client
      */
     public function getSupplierInvoiceFileConnections(): ResponseInterface
     {
-        return $this->sendRequest('GET', '/supplierinvoicefileconnections');
+        return $this->getPaginatedEndpoint('/supplierinvoicefileconnections');
     }
 
     /**
@@ -244,8 +245,8 @@ class Client
     {
         return $this->sendRequest('POST', '/supplierinvoices', [
             'json' => [
-                'SupplierInvoice' => $data
-            ]
+                'SupplierInvoice' => $data,
+            ],
         ]);
     }
 
@@ -266,11 +267,12 @@ class Client
     #region Project methods
 
     /**
-     * @return ResponseInterface
+     * @param array $options
+     * @return ResponseInterface[]
      */
-    public function getProjects(): ResponseInterface
+    public function getProjects(array $options = []): array
     {
-        return $this->sendRequest('GET', '/projects');
+        return $this->getPaginatedEndpoint('/projects', $options);
     }
 
     /**
@@ -290,8 +292,8 @@ class Client
     {
         return $this->sendRequest('POST', '/projects', [
             'json' => [
-                'Project' => $data
-            ]
+                'Project' => $data,
+            ],
         ]);
     }
 
@@ -304,8 +306,8 @@ class Client
     {
         return $this->sendRequest('PUT', '/projects/' . $projectNumber, [
             'json' => [
-                'Project' => $data
-            ]
+                'Project' => $data,
+            ],
         ]);
     }
 
@@ -330,8 +332,8 @@ class Client
     {
         return $this->getPaginatedEndpoint('/vouchers', [
             'query' => [
-                'financialyeardate' => $financialYearDate->format('Y-m-d')
-            ]
+                'financialyeardate' => $financialYearDate->format('Y-m-d'),
+            ],
         ]);
     }
 
@@ -369,11 +371,12 @@ class Client
     #region Order methods
 
     /**
+     * @param array $options
      * @return ResponseInterface[]
      */
-    public function getOrders(): array
+    public function getOrders(array $options = []): array
     {
-        return $this->getPaginatedEndpoint('/orders');
+        return $this->getPaginatedEndpoint('/orders', $options);
     }
 
     /**
@@ -393,8 +396,8 @@ class Client
     {
         return $this->sendRequest('POST', '/orders', [
             'json' => [
-                'Order' => $data
-            ]
+                'Order' => $data,
+            ],
         ]);
     }
 
@@ -414,11 +417,12 @@ class Client
     #region Article methods
 
     /**
+     * @param array $options
      * @return ResponseInterface[]
      */
-    public function getArticles(): array
+    public function getArticles(array $options = []): array
     {
-        return $this->getPaginatedEndpoint('/articles');
+        return $this->getPaginatedEndpoint('/articles', $options);
     }
 
     /**
@@ -427,8 +431,7 @@ class Client
      */
     public function getArticle(string $articleNumber): ResponseInterface
     {
-        $endpoint = sprintf('/articles/%s', $articleNumber);
-        return $this->sendRequest('GET', $endpoint);
+        return $this->sendRequest('GET', '/articles/' . $articleNumber);
     }
 
     /**
@@ -439,8 +442,8 @@ class Client
     {
         return $this->sendRequest('POST', '/articles', [
             'json' => [
-                'Article' => $data
-            ]
+                'Article' => $data,
+            ],
         ]);
     }
 
@@ -452,6 +455,55 @@ class Client
     public function deleteArticle(string $articleNumber): ResponseInterface
     {
         return $this->sendRequest('DELETE', '/articles/' . $articleNumber);
+    }
+
+    #endregion
+
+    #region Account
+
+    /**
+     * @param array $options
+     * @return ResponseInterface[]
+     */
+    public function getAccounts(array $options = []): array
+    {
+        return $this->getPaginatedEndpoint('/accounts', $options);
+    }
+
+    /**
+     * @param string $accountNumber
+     * @return ResponseInterface
+     */
+    public function getAccount(string $accountNumber): ResponseInterface
+    {
+        return $this->sendRequest('GET', '/accounts/' . $accountNumber);
+    }
+
+    /**
+     * @param array $data
+     * @return ResponseInterface
+     */
+    public function createAccount(array $data): ResponseInterface
+    {
+        return $this->sendRequest('POST', '/accounts', [
+            'json' => [
+                'Account' => $data,
+            ],
+        ]);
+    }
+
+    /**
+     * @param string $accountNumber
+     * @param array $data
+     * @return ResponseInterface
+     */
+    public function updateAccount(string $accountNumber, array $data): ResponseInterface
+    {
+        return $this->sendRequest('PUT', '/accounts/' . $accountNumber, [
+            'json' => [
+                'Account' => $data,
+            ],
+        ]);
     }
 
     #endregion
