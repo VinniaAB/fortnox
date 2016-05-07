@@ -7,6 +7,50 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use DateTimeInterface;
 
+/**
+ * Class Client
+ * @package Vinnia\Fortnox
+ *
+ * @method ResponseInterface[]  getAccounts(array $data = [])
+ * @method ResponseInterface    getAccount(string $accountNumber)
+ * @method ResponseInterface    updateAccount(string $accountNumber, array $data)
+ * @method ResponseInterface    createAccount(array $data)
+ *
+ * @method ResponseInterface[]  getArticles(array $data = [])
+ * @method ResponseInterface    getArticle(string $articleNumber)
+ * @method ResponseInterface    updateArticle(string $articleNumber, array $data)
+ * @method ResponseInterface    createArticle(array $data)
+ * @method ResponseInterface    deleteArticle(string $articleNumber, array $data)
+ *
+ * @method ResponseInterface[]  getOrders(array $data = [])
+ * @method ResponseInterface    getOrder(string $orderNumber)
+ * @method ResponseInterface    updateOrder(string $orderNumber, array $data)
+ * @method ResponseInterface    createOrder(array $data)
+ *
+ * @method ResponseInterface[]  getProjects(array $data = [])
+ * @method ResponseInterface    getProject(string $projectNumber)
+ * @method ResponseInterface    updateProject(string $projectNumber, array $data)
+ * @method ResponseInterface    createProject(array $data)
+ * @method ResponseInterface    deleteProject(string $projectNumber, array $data)
+ *
+ * @method ResponseInterface[]  getCustomers(array $data = [])
+ * @method ResponseInterface    getCustomer(string $customerNumber)
+ * @method ResponseInterface    updateCustomer(string $customerNumber, array $data)
+ * @method ResponseInterface    createCustomer(array $data)
+ * @method ResponseInterface    deleteCustomer(string $customerNumber, array $data)
+ *
+ * @method ResponseInterface[]  getSupplierInvoices(array $data = [])
+ * @method ResponseInterface    getSupplierInvoice(string $supplierInvoiceNumber)
+ * @method ResponseInterface    updateSupplierInvoice(string $supplierInvoiceNumber, array $data)
+ * @method ResponseInterface    createSupplierInvoice(array $data)
+ *
+ * @method ResponseInterface[]  getSuppliers(array $data = [])
+ * @method ResponseInterface    getSupplier(string $supplierNumber)
+ * @method ResponseInterface    updateSupplier(string $supplierNumber, array $data)
+ * @method ResponseInterface    createSupplier(array $data)
+ *
+ * @method ResponseInterface    createVoucher(array $data)
+ */
 class Client
 {
 
@@ -26,6 +70,17 @@ class Client
      * @var string
      */
     private $clientSecret;
+
+    const REST_METHODS = [
+        'Account' => '/accounts',
+        'Article' => '/articles',
+        'Order' => '/orders',
+        'Project' => '/projects',
+        'Customer' => '/customers',
+        'SupplierInvoice' => '/supplierinvoices',
+        'Supplier' => '/suppliers',
+        'Voucher' => '/vouchers',
+    ];
 
     /**
      * Client constructor.
@@ -94,76 +149,53 @@ class Client
     }
 
     /**
-     * @param array $options
-     * @return ResponseInterface[]
-     */
-    public function getCustomers(array $options = []): array
-    {
-        return $this->getPaginatedEndpoint('/customers', $options);
-    }
-
-    /**
-     * @param string $customerNumber
+     * @param string $name
+     * @param array $arguments
      * @return ResponseInterface
      */
-    public function getCustomer(string $customerNumber): ResponseInterface
+    public function __call($name, $arguments)
     {
-        return $this->sendRequest('GET', '/customers/' . $customerNumber);
+        preg_match('/^(get|update|create|delete)(.+)$/', $name, $matches);
+        if (count($matches) !== 3) {
+            throw new \BadMethodCallException("Method {$name} not found");
+        }
+        $isPaginated = substr($matches[2], -1) === 's';
+        $method = $isPaginated ? substr($matches[2], 0, -1) : $matches[2];
+        $methods = self::REST_METHODS;
+        if (!isset($methods[$method])) {
+            throw new \BadMethodCallException("Method {$name} not found");
+        }
+        $endpoint = $methods[$method];
+
+        switch($matches[1]) {
+            case 'get':
+                if ($isPaginated) {
+                    $params = $arguments[0] ?? [];
+                    return $this->getPaginatedEndpoint($endpoint, $params);
+                }
+                return $this->sendRequest('GET', $endpoint . '/' . $arguments[0]);
+                break;
+            case 'update':
+                return $this->sendRequest('PUT', $endpoint . '/' . $arguments[0], [
+                    'json' => [
+                        $method => $arguments[1],
+                    ],
+                ]);
+                break;
+            case 'create':
+                return $this->sendRequest('POST', $endpoint, [
+                    'json' => [
+                        $method => $arguments[0],
+                    ],
+                ]);
+                break;
+            case 'delete':
+                return $this->sendRequest('DELETE', $endpoint . '/' . $arguments[0]);
+                break;
+        }
     }
 
-    /**
-     * @param string[] $data customer data
-     * @return ResponseInterface
-     */
-    public function createCustomer(array $data): ResponseInterface
-    {
-        return $this->sendRequest('POST', '/customers', [
-            'json' => [
-                'Customer' => $data,
-            ],
-        ]);
-    }
-
-    /**
-     * @param string $customerNumber
-     * @param string[] $data
-     * @return ResponseInterface
-     */
-    public function updateCustomer(string $customerNumber, array $data): ResponseInterface
-    {
-        return $this->sendRequest('PUT', '/customers/' . $customerNumber, [
-            'json' => [
-                'Customer' => $data,
-            ],
-        ]);
-    }
-
-    /**
-     * @param string $customerNumber
-     * @return ResponseInterface
-     */
-    public function deleteCustomer(string $customerNumber): ResponseInterface
-    {
-        return $this->sendRequest('DELETE', '/customers/' . $customerNumber);
-    }
-
-    /**
-     * @param array $options
-     * @return ResponseInterface[]
-     */
-    public function getSuppliers(array $options = []): array
-    {
-        return $this->getPaginatedEndpoint('/suppliers', $options);
-    }
-
-    /**
-     * @param string $id
-     * @return ResponseInterface
-     */
-    public function getSupplier(string $id): ResponseInterface
-    {
-        return $this->sendRequest('GET', '/suppliers/' . $id, 'Supplier');
-    }
+    #region Inbox
 
     /**
      * @param string $id
@@ -194,6 +226,19 @@ class Client
         ]);
     }
 
+    #endregion
+
+    #region Supplier Invoice File Connections
+
+    /**
+     * @param string $fileId
+     * @return ResponseInterface
+     */
+    public function getSupplierInvoiceFileConnections(string $fileId): ResponseInterface
+    {
+        return $this->getPaginatedEndpoint('/supplierinvoicefileconnections/' . $fileId);
+    }
+
     /**
      * @param string $supplierInvoiceNumber
      * @param string $fileId
@@ -212,117 +257,17 @@ class Client
     }
 
     /**
+     * @param string $fileId
      * @return ResponseInterface
      */
-    public function getSupplierInvoiceFileConnections(): ResponseInterface
+    public function deleteSupplierInvoiceFileConnections(string $fileId): ResponseInterface
     {
-        return $this->getPaginatedEndpoint('/supplierinvoicefileconnections');
-    }
-
-    /**
-     * @param array $options guzzle request options
-     * @return ResponseInterface[]
-     */
-    public function getSupplierInvoices(array $options = []): array
-    {
-        return $this->getPaginatedEndpoint('/supplierinvoices', $options);
-    }
-
-    /**
-     * @param string $id
-     * @return ResponseInterface
-     */
-    public function getSupplierInvoice(string $id): ResponseInterface
-    {
-        return $this->sendRequest('GET', '/supplierinvoices/' . $id);
-    }
-
-    /**
-     * @param array $data
-     * @return ResponseInterface
-     */
-    public function createSupplierInvoice(array $data): ResponseInterface
-    {
-        return $this->sendRequest('POST', '/supplierinvoices', [
-            'json' => [
-                'SupplierInvoice' => $data,
-            ],
-        ]);
-    }
-
-    /**
-     * @param string $id
-     * @param array $data the supplier invoice data
-     * @return ResponseInterface
-     */
-    public function updateSupplierInvoice(string $id, array $data): ResponseInterface
-    {
-        return $this->sendRequest('PUT', '/supplierinvoices/' . $id, [
-            'json' => [
-                'SupplierInvoice' => $data,
-            ],
-        ]);
-    }
-
-    #region Project methods
-
-    /**
-     * @param array $options
-     * @return ResponseInterface[]
-     */
-    public function getProjects(array $options = []): array
-    {
-        return $this->getPaginatedEndpoint('/projects', $options);
-    }
-
-    /**
-     * @param string $projectNumber
-     * @return ResponseInterface
-     */
-    public function getProject(string $projectNumber): ResponseInterface
-    {
-        return $this->sendRequest('GET', '/projects/' . $projectNumber);
-    }
-
-    /**
-     * @param string[] $data
-     * @return ResponseInterface
-     */
-    public function createProject(array $data): ResponseInterface
-    {
-        return $this->sendRequest('POST', '/projects', [
-            'json' => [
-                'Project' => $data,
-            ],
-        ]);
-    }
-
-    /**
-     * @param string $projectNumber
-     * @param string[] $data
-     * @return ResponseInterface
-     */
-    public function updateProject(string $projectNumber, array $data): ResponseInterface
-    {
-        return $this->sendRequest('PUT', '/projects/' . $projectNumber, [
-            'json' => [
-                'Project' => $data,
-            ],
-        ]);
-    }
-
-    /**
-     * @param string $projectNumber
-     * @return ResponseInterface
-     */
-    public function deleteProject(string $projectNumber): ResponseInterface
-    {
-        return $this->sendRequest('DELETE', '/projects/' . $projectNumber);
+        return $this->sendRequest('DELETE', '/supplierinvoicefileconnections/' . $fileId);
     }
 
     #endregion
 
-    #region Voucher methods
+    #region Voucher
 
     /**
      * @param DateTimeInterface $financialYearDate date of the financial year to use (Y-m-d)
@@ -350,159 +295,6 @@ class Client
             'query' => [
                 'financialyeardate' => $financialYearDate->format('Y-m-d')
             ]
-        ]);
-    }
-
-    /**
-     * @param array $data
-     * @return ResponseInterface
-     */
-    public function createVoucher(array $data): ResponseInterface
-    {
-        return $this->sendRequest('POST', '/vouchers', [
-            'json' => [
-                'Voucher' => $data
-            ]
-        ]);
-    }
-
-    #endregion
-
-    #region Order methods
-
-    /**
-     * @param array $options
-     * @return ResponseInterface[]
-     */
-    public function getOrders(array $options = []): array
-    {
-        return $this->getPaginatedEndpoint('/orders', $options);
-    }
-
-    /**
-     * @param string $documentNumber
-     * @return ResponseInterface
-     */
-    public function getOrder(string $documentNumber): ResponseInterface
-    {
-        return $this->sendRequest('GET', '/orders/' . $documentNumber);
-    }
-
-    /**
-     * @param array $data
-     * @return ResponseInterface
-     */
-    public function createOrder(array $data): ResponseInterface
-    {
-        return $this->sendRequest('POST', '/orders', [
-            'json' => [
-                'Order' => $data,
-            ],
-        ]);
-    }
-
-    /**
-     * @param string $orderId
-     * @return ResponseInterface
-     */
-    public function cancelOrder(string $orderId): ResponseInterface
-    {
-        $endpoint = sprintf('/orders/%s/cancel', $orderId);
-        return $this->sendRequest('PUT', $endpoint);
-    }
-
-    #endregion
-
-
-    #region Article methods
-
-    /**
-     * @param array $options
-     * @return ResponseInterface[]
-     */
-    public function getArticles(array $options = []): array
-    {
-        return $this->getPaginatedEndpoint('/articles', $options);
-    }
-
-    /**
-     * @param $articleNumber
-     * @return ResponseInterface
-     */
-    public function getArticle(string $articleNumber): ResponseInterface
-    {
-        return $this->sendRequest('GET', '/articles/' . $articleNumber);
-    }
-
-    /**
-     * @param array $data
-     * @return ResponseInterface
-     */
-    public function createArticle(array $data): ResponseInterface
-    {
-        return $this->sendRequest('POST', '/articles', [
-            'json' => [
-                'Article' => $data,
-            ],
-        ]);
-    }
-
-
-    /**
-     * @param $articleNumber
-     * @return ResponseInterface
-     */
-    public function deleteArticle(string $articleNumber): ResponseInterface
-    {
-        return $this->sendRequest('DELETE', '/articles/' . $articleNumber);
-    }
-
-    #endregion
-
-    #region Account
-
-    /**
-     * @param array $options
-     * @return ResponseInterface[]
-     */
-    public function getAccounts(array $options = []): array
-    {
-        return $this->getPaginatedEndpoint('/accounts', $options);
-    }
-
-    /**
-     * @param string $accountNumber
-     * @return ResponseInterface
-     */
-    public function getAccount(string $accountNumber): ResponseInterface
-    {
-        return $this->sendRequest('GET', '/accounts/' . $accountNumber);
-    }
-
-    /**
-     * @param array $data
-     * @return ResponseInterface
-     */
-    public function createAccount(array $data): ResponseInterface
-    {
-        return $this->sendRequest('POST', '/accounts', [
-            'json' => [
-                'Account' => $data,
-            ],
-        ]);
-    }
-
-    /**
-     * @param string $accountNumber
-     * @param array $data
-     * @return ResponseInterface
-     */
-    public function updateAccount(string $accountNumber, array $data): ResponseInterface
-    {
-        return $this->sendRequest('PUT', '/accounts/' . $accountNumber, [
-            'json' => [
-                'Account' => $data,
-            ],
         ]);
     }
 
