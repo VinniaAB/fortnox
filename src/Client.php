@@ -20,7 +20,7 @@ use DateTimeInterface;
  * @method ResponseInterface    getArticle(string $articleNumber)
  * @method ResponseInterface    updateArticle(string $articleNumber, array $data)
  * @method ResponseInterface    createArticle(array $data)
- * @method ResponseInterface    deleteArticle(string $articleNumber, array $data)
+ * @method ResponseInterface    deleteArticle(string $articleNumber)
  *
  * @method ResponseInterface[]  getOrders(array $data = [])
  * @method ResponseInterface    getOrder(string $orderNumber)
@@ -31,13 +31,13 @@ use DateTimeInterface;
  * @method ResponseInterface    getProject(string $projectNumber)
  * @method ResponseInterface    updateProject(string $projectNumber, array $data)
  * @method ResponseInterface    createProject(array $data)
- * @method ResponseInterface    deleteProject(string $projectNumber, array $data)
+ * @method ResponseInterface    deleteProject(string $projectNumber)
  *
  * @method ResponseInterface[]  getCustomers(array $data = [])
  * @method ResponseInterface    getCustomer(string $customerNumber)
  * @method ResponseInterface    updateCustomer(string $customerNumber, array $data)
  * @method ResponseInterface    createCustomer(array $data)
- * @method ResponseInterface    deleteCustomer(string $customerNumber, array $data)
+ * @method ResponseInterface    deleteCustomer(string $customerNumber)
  *
  * @method ResponseInterface[]  getSupplierInvoices(array $data = [])
  * @method ResponseInterface    getSupplierInvoice(string $supplierInvoiceNumber)
